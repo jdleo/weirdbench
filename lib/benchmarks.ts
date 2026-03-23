@@ -58,23 +58,6 @@ export const benchmarkRegistry: BenchmarkDefinition[] = [
         "Cases are generated locally, model outputs are parsed and scored locally, and final results are cached in Neon by benchmark and model ID.",
     },
   },
-  {
-    id: "world-state-tracking",
-    name: "World State Tracking",
-    scoreDirection: "higher",
-    description:
-      "Track entities, ownership, attributes, reversals, and conditional updates in a small simulated world, then answer exact final-state queries. Higher is better.",
-    methodology: {
-      measurementTechnique:
-        "Generate a small formal world with entities, locations, ownership, reversible actions, and derived rule triggers, sample legal action sequences from a simulator, then score exact final-state query accuracy.",
-      promptSummary:
-        "Given an initial world state, world rules, and a sequence of actions, undo operations, and conditional events, answer final-state queries and return only JSON.",
-      scoreSummary:
-        "Higher is better. The main score is exact query accuracy across all generated queries, with exact full-case match rate tracked in metadata.",
-      executionSummary:
-        "Cases are generated and solved locally by a simulator, model outputs are parsed with retries and provider fallbacks, and final scores are cached in Neon by benchmark and model ID.",
-    },
-  },
 ];
 
 export function getBenchmarkById(id: string): BenchmarkDefinition | undefined {
