@@ -8,8 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "db:init": "node --env-file=.env.local --import tsx ./scripts/init-db.ts",
-    "benchmark:semantic-diversity": "node --env-file=.env.local --import tsx ./scripts/run-semantic-diversity.ts",
-    "benchmark:hidden-rule-sequence": "node --env-file=.env.local --import tsx ./scripts/run-hidden-rule-sequence.ts"
+    "benchmark:semantic-diversity": "node --env-file=.env.local --import tsx ./scripts/run-semantic-diversity.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",
