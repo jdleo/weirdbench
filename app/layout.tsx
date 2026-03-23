@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Analytics } from "@vercel/analytics/next";
 import { Inter, Source_Serif_4 } from "next/font/google";
 import { siteConfig } from "@/lib/site";
 import "./globals.css";
@@ -81,7 +82,10 @@ export default function RootLayout({
       lang="en"
       className={`${inter.variable} ${sourceSerif.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        {children}
+        <Analytics />
+      </body>
     </html>
   );
 }
