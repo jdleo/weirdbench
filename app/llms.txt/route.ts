@@ -10,6 +10,9 @@ export function GET() {
     "## Home",
     `- ${siteConfig.url}/`,
     "",
+    "## Intelligence Index",
+    `- ${siteConfig.url}/intelligence-index | WeirdBench Intelligence Index`,
+    "",
     "## Benchmarks",
     ...benchmarkRegistry.map(
       (benchmark) =>

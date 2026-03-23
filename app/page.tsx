@@ -68,6 +68,12 @@ export default async function Home() {
             >
               GitHub
             </Link>
+            <Link
+              href="/intelligence-index"
+              className="shell-button-primary inline-flex items-center justify-center whitespace-nowrap px-5 py-2.5 text-sm"
+            >
+              WeirdBench Intelligence Index
+            </Link>
           </div>
         </header>
 

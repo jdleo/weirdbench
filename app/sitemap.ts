@@ -12,6 +12,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "weekly",
       priority: 1,
     },
+    {
+      url: `${siteConfig.url}/intelligence-index`,
+      lastModified,
+      changeFrequency: "weekly",
+      priority: 0.9,
+    },
     ...benchmarkRegistry.map((benchmark) => ({
       url: `${siteConfig.url}/benchmarks/${benchmark.id}`,
       lastModified,

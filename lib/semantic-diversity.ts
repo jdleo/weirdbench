@@ -16,6 +16,8 @@ type RequestOverride = {
   useReasoningExclude?: boolean;
 };
 
+type ChatRequestMode = "strict" | "relaxed" | "minimal";
+
 const providerOverrides: Record<string, RequestOverride> = {
   "minimax/minimax-m2.5": {
     provider: {
@@ -104,24 +106,10 @@ async function generateSemanticDiversityWords(
   let bestWords: string[] = [];
 
   for (let attempt = 1; attempt <= MAX_GENERATION_ATTEMPTS; attempt += 1) {
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: getOpenRouterHeaders(),
-      body: JSON.stringify(
-        buildChatRequest({
-          modelId,
-          prompt: attempt === 1 ? prompt : buildRepairPrompt(bestWords),
-        }),
-      ),
+    const data = await requestChatCompletion({
+      modelId,
+      prompt: attempt === 1 ? prompt : buildRepairPrompt(bestWords),
     });
-
-    if (!response.ok) {
-      throw new Error(
-        `OpenRouter chat request failed: ${response.status} ${await response.text()}`,
-      );
-    }
-
-    const data = (await response.json()) as OpenRouterChatResponse;
     const choice = data.choices?.[0];
     const message = choice?.message;
     const content = extractTextContent(message?.content);
@@ -176,8 +164,21 @@ async function generateSemanticDiversityWords(
 function buildChatRequest(input: {
   modelId: string;
   prompt: string;
+  mode: ChatRequestMode;
 }): Record<string, unknown> {
   const requestOverride = getRequestOverride(input.modelId);
+  const useResponseFormat =
+    input.mode === "strict"
+      ? requestOverride.useResponseFormat !== false
+      : false;
+  const useReasoningExclude =
+    input.mode === "minimal"
+      ? false
+      : requestOverride.useReasoningExclude !== false;
+  const requireParameters =
+    input.mode === "strict"
+      ? requestOverride.provider?.require_parameters ?? true
+      : false;
 
   return {
     model: input.modelId,
@@ -188,14 +189,14 @@ function buildChatRequest(input: {
       },
     ],
     temperature: 0.1,
-    ...(requestOverride.useReasoningExclude !== false
+    ...(useReasoningExclude
       ? {
           reasoning: {
             exclude: true,
           },
         }
       : {}),
-    ...(requestOverride.useResponseFormat !== false
+    ...(useResponseFormat
       ? {
           response_format: {
             type: "json_object",
@@ -203,10 +204,55 @@ function buildChatRequest(input: {
         }
       : {}),
     provider: {
-      require_parameters: true,
+      require_parameters: requireParameters,
       ...(requestOverride.provider ?? {}),
     },
   };
+}
+
+async function requestChatCompletion(input: {
+  modelId: string;
+  prompt: string;
+}): Promise<OpenRouterChatResponse> {
+  const modes: ChatRequestMode[] = ["strict", "relaxed", "minimal"];
+  let lastError: Error | null = null;
+
+  for (const mode of modes) {
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: getOpenRouterHeaders(),
+      body: JSON.stringify(
+        buildChatRequest({
+          modelId: input.modelId,
+          prompt: input.prompt,
+          mode,
+        }),
+      ),
+    });
+
+    if (response.ok) {
+      return (await response.json()) as OpenRouterChatResponse;
+    }
+
+    const errorText = await response.text();
+
+    if (
+      response.status === 404 &&
+      errorText.includes("requested parameters") &&
+      mode !== "minimal"
+    ) {
+      lastError = new Error(
+        `OpenRouter chat request failed in ${mode} mode: ${response.status} ${errorText}`,
+      );
+      continue;
+    }
+
+    throw new Error(
+      `OpenRouter chat request failed: ${response.status} ${errorText}`,
+    );
+  }
+
+  throw lastError ?? new Error("OpenRouter chat request failed in all modes.");
 }
 
 function getRequestOverride(modelId: string): RequestOverride {
