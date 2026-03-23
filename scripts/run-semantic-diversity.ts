@@ -14,49 +14,64 @@ async function main() {
   const modelIds = getModelIds(process.argv.slice(2));
 
   for (const modelId of modelIds) {
-    const existing = await getBenchmarkScore(benchmark.id, modelId);
+    try {
+      const existing = await getBenchmarkScore(benchmark.id, modelId);
 
-    if (existing) {
+      if (existing) {
+        console.log(
+          JSON.stringify(
+            {
+              benchmarkId: benchmark.id,
+              modelId,
+              cached: true,
+              score: existing.score,
+            },
+            null,
+            2,
+          ),
+        );
+        continue;
+      }
+
+      const result = await runSemanticDiversityBenchmark(modelId);
+
+      await upsertBenchmarkScore({
+        benchmarkId: benchmark.id,
+        modelId,
+        score: result.averageScore,
+        metadata: {
+          prompt: result.prompt,
+          embeddingModel: result.embeddingModel,
+          runs: result.runs,
+        },
+      });
+
       console.log(
         JSON.stringify(
           {
             benchmarkId: benchmark.id,
             modelId,
-            cached: true,
-            score: existing.score,
+            cached: false,
+            score: result.averageScore,
           },
           null,
           2,
         ),
       );
-      continue;
+    } catch (error) {
+      console.error(
+        JSON.stringify(
+          {
+            benchmarkId: benchmark.id,
+            modelId,
+            skipped: true,
+            error: error instanceof Error ? error.message : String(error),
+          },
+          null,
+          2,
+        ),
+      );
     }
-
-    const result = await runSemanticDiversityBenchmark(modelId);
-
-    await upsertBenchmarkScore({
-      benchmarkId: benchmark.id,
-      modelId,
-      score: result.averageScore,
-      metadata: {
-        prompt: result.prompt,
-        embeddingModel: result.embeddingModel,
-        runs: result.runs,
-      },
-    });
-
-    console.log(
-      JSON.stringify(
-        {
-          benchmarkId: benchmark.id,
-          modelId,
-          cached: false,
-          score: result.averageScore,
-        },
-        null,
-        2,
-      ),
-    );
   }
 }
 

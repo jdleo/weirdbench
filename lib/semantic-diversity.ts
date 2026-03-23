@@ -3,12 +3,33 @@ const RUN_COUNT = 3;
 const WORD_COUNT = 20;
 const MAX_GENERATION_ATTEMPTS = 5;
 
+const providerOverrides: Record<
+  string,
+  {
+    only?: string[];
+    order?: string[];
+    allowFallbacks?: boolean;
+  }
+> = {
+  "minimax/minimax-m2.5": {
+    allowFallbacks: false,
+  },
+};
+
 type OpenRouterChatResponse = {
   choices?: Array<{
+    finish_reason?: string | null;
     message?: {
-      content?: string;
+      content?: string | Array<{
+        type?: string;
+        text?: string;
+      }>;
+      reasoning?: string | Array<unknown>;
+      reasoning_details?: Array<unknown>;
     };
   }>;
+  provider?: string;
+  model?: string;
 };
 
 type OpenRouterEmbeddingResponse = {
@@ -16,6 +37,13 @@ type OpenRouterEmbeddingResponse = {
     embedding?: number[];
   }>;
 };
+
+type OpenRouterContentPart = {
+  type?: string;
+  text?: string;
+};
+
+type OpenRouterMessageContent = string | OpenRouterContentPart[] | undefined;
 
 export type SemanticDiversityRun = {
   words: string[];
@@ -82,6 +110,16 @@ async function generateSemanticDiversityWords(
           },
         ],
         temperature: 0.1,
+        reasoning: {
+          exclude: true,
+        },
+        response_format: {
+          type: "json_object",
+        },
+        provider: {
+          require_parameters: true,
+          ...providerOverrides[modelId],
+        },
       }),
     });
 
@@ -92,13 +130,40 @@ async function generateSemanticDiversityWords(
     }
 
     const data = (await response.json()) as OpenRouterChatResponse;
-    const content = data.choices?.[0]?.message?.content;
+    const choice = data.choices?.[0];
+    const message = choice?.message;
+    const content = extractTextContent(message?.content);
 
     if (!content) {
-      throw new Error("OpenRouter returned no chat content.");
+      logChatAttemptFailure({
+        modelId,
+        attempt,
+        reason: "missing_content",
+        finishReason: choice?.finish_reason,
+        provider: data.provider,
+        contentType: describeContentShape(message?.content),
+        hasReasoning: Boolean(message?.reasoning),
+        hasReasoningDetails: Boolean(message?.reasoning_details?.length),
+      });
+      continue;
     }
 
     const words = normalizeWordList(content);
+
+    if (words.length === 0) {
+      logChatAttemptFailure({
+        modelId,
+        attempt,
+        reason: "unparseable_content",
+        finishReason: choice?.finish_reason,
+        provider: data.provider,
+        contentType: describeContentShape(message?.content),
+        hasReasoning: Boolean(message?.reasoning),
+        hasReasoningDetails: Boolean(message?.reasoning_details?.length),
+        rawPreview: content.slice(0, 240),
+      });
+      continue;
+    }
 
     if (attempt === 1) {
       bestWords = words.slice(0, WORD_COUNT);
@@ -139,6 +204,15 @@ function normalizeWordList(content: string): string[] {
     if (Array.isArray(parsed)) {
       return sanitizeWords(parsed);
     }
+
+    if (
+      parsed &&
+      typeof parsed === "object" &&
+      "words" in parsed &&
+      Array.isArray((parsed as { words?: unknown }).words)
+    ) {
+      return sanitizeWords((parsed as { words: unknown[] }).words);
+    }
   } catch {
     // Fall back to line / comma parsing.
   }
@@ -150,6 +224,67 @@ function normalizeWordList(content: string): string[] {
     .filter(Boolean);
 
   return sanitizeWords(fallback);
+}
+
+function extractTextContent(content: OpenRouterMessageContent): string {
+  if (typeof content === "string") {
+    return content;
+  }
+
+  if (Array.isArray(content)) {
+    return content
+      .map((part) => {
+        if (typeof part?.text === "string") {
+          return part.text;
+        }
+
+        return "";
+      })
+      .filter(Boolean)
+      .join("\n")
+      .trim();
+  }
+
+  return "";
+}
+
+function describeContentShape(content: OpenRouterMessageContent): string {
+  if (typeof content === "string") {
+    return "string";
+  }
+
+  if (Array.isArray(content)) {
+    return "array";
+  }
+
+  if (content == null) {
+    return "empty";
+  }
+
+  return typeof content;
+}
+
+function logChatAttemptFailure(details: {
+  modelId: string;
+  attempt: number;
+  reason: string;
+  finishReason?: string | null;
+  provider?: string;
+  contentType: string;
+  hasReasoning: boolean;
+  hasReasoningDetails: boolean;
+  rawPreview?: string;
+}): void {
+  console.warn(
+    JSON.stringify(
+      {
+        event: "semantic_diversity_attempt_failed",
+        ...details,
+      },
+      null,
+      2,
+    ),
+  );
 }
 
 function sanitizeWords(values: unknown[]): string[] {
