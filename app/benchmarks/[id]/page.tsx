@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -6,6 +7,55 @@ import {
   getScoreDirectionLabel,
 } from "@/lib/benchmarks";
 import { getScoresForBenchmark } from "@/lib/benchmark-store";
+import { siteConfig } from "@/lib/site";
+
+export async function generateMetadata(
+  props: PageProps<"/benchmarks/[id]">,
+): Promise<Metadata> {
+  const { id } = await props.params;
+  const benchmark = getBenchmarkById(id);
+
+  if (!benchmark) {
+    return {
+      title: "Benchmark Not Found",
+    };
+  }
+
+  const title = `${benchmark.name} Benchmark Leaderboard`;
+  const description = `${benchmark.description} ${getScoreDirectionLabel(
+    benchmark.scoreDirection,
+  )}.`;
+
+  return {
+    title,
+    description,
+    alternates: {
+      canonical: `/benchmarks/${benchmark.id}`,
+    },
+    openGraph: {
+      type: "website",
+      url: `${siteConfig.url}/benchmarks/${benchmark.id}`,
+      title,
+      description,
+      siteName: siteConfig.name,
+      images: [
+        {
+          url: siteConfig.ogImage,
+          width: 1200,
+          height: 630,
+          alt: `${benchmark.name} benchmark preview`,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [siteConfig.ogImage],
+      creator: siteConfig.xHandle,
+    },
+  };
+}
 
 export default async function BenchmarkPage(props: PageProps<"/benchmarks/[id]">) {
   const { id } = await props.params;
@@ -16,9 +66,33 @@ export default async function BenchmarkPage(props: PageProps<"/benchmarks/[id]">
   }
 
   const scores = await getScoresForBenchmark(benchmark);
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Dataset",
+    name: benchmark.name,
+    description: benchmark.description,
+    url: `${siteConfig.url}/benchmarks/${benchmark.id}`,
+    creator: {
+      "@type": "Organization",
+      name: siteConfig.name,
+      url: siteConfig.url,
+    },
+    includedInDataCatalog: {
+      "@type": "DataCatalog",
+      name: siteConfig.name,
+      url: siteConfig.url,
+    },
+    measurementTechnique:
+      "Generate 20 words, embed them, and score average pairwise semantic similarity.",
+    variableMeasured: benchmark.scoreDirection,
+  };
 
   return (
     <div className="benchmark-page-shell">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <main className="mx-auto flex min-h-screen w-full max-w-[96rem] flex-col px-4 py-4 sm:px-6 sm:py-6">
         <header className="shell-panel mb-4 rounded-[2rem] px-5 py-4 xl:px-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -111,6 +185,46 @@ export default async function BenchmarkPage(props: PageProps<"/benchmarks/[id]">
                 </p>
               </section>
             )}
+          </div>
+        </section>
+
+        <section className="shell-panel mt-4 rounded-[2rem] p-5 sm:p-6">
+          <div className="grid gap-5">
+            <div>
+              <p className="shell-label">Methodology</p>
+              <h2 className="shell-title mt-3">How scoring works</h2>
+              <p className="shell-copy mt-3 max-w-3xl text-sm sm:text-base">
+                Semantic Diversity asks a model to generate exactly 20 lowercase
+                English words that are as semantically unrelated as possible.
+                Each word is embedded, cosine similarity is computed for every
+                pair, and the final benchmark score is the average of those
+                similarities.
+              </p>
+            </div>
+
+            <div className="grid gap-4 lg:grid-cols-3">
+              <article className="shell-card rounded-[1.5rem] p-5">
+                <p className="shell-label">Prompt</p>
+                <p className="shell-copy mt-3 text-sm">
+                  Generate exactly 20 English words and return only a JSON array
+                  of lowercase single words.
+                </p>
+              </article>
+              <article className="shell-card rounded-[1.5rem] p-5">
+                <p className="shell-label">Score</p>
+                <p className="shell-copy mt-3 text-sm">
+                  Lower is better. Lower scores mean the chosen words are less
+                  semantically related to each other.
+                </p>
+              </article>
+              <article className="shell-card rounded-[1.5rem] p-5">
+                <p className="shell-label">Execution</p>
+                <p className="shell-copy mt-3 text-sm">
+                  Benchmark runners execute locally, cache results in Neon, and
+                  skip recomputation for models that already have stored scores.
+                </p>
+              </article>
+            </div>
           </div>
         </section>
       </main>

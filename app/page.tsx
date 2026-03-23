@@ -5,6 +5,7 @@ import {
   getScoreDirectionLabel,
 } from "@/lib/benchmarks";
 import { getTopModelPreview } from "@/lib/benchmark-store";
+import { siteConfig } from "@/lib/site";
 
 export default async function Home() {
   const benchmarks = benchmarkRegistry;
@@ -14,9 +15,31 @@ export default async function Home() {
       topScores: await getTopModelPreview(benchmark, 3),
     })),
   );
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: siteConfig.name,
+    url: siteConfig.url,
+    description: siteConfig.description,
+    publisher: {
+      "@type": "Organization",
+      name: siteConfig.name,
+      url: siteConfig.url,
+    },
+    hasPart: benchmarkPreviews.map(({ benchmark }) => ({
+      "@type": "Dataset",
+      name: benchmark.name,
+      description: benchmark.description,
+      url: `${siteConfig.url}/benchmarks/${benchmark.id}`,
+    })),
+  };
 
   return (
     <div className="home-page-shell">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <main className="mx-auto flex min-h-screen w-full max-w-[96rem] flex-col px-4 py-4 sm:px-6 sm:py-6">
         <header className="shell-panel mb-4 rounded-[2rem] px-5 py-4 xl:px-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
