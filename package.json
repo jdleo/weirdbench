@@ -8,14 +8,17 @@
     "start": "next start",
     "lint": "eslint",
     "db:init": "node --env-file=.env.local --import tsx ./scripts/init-db.ts",
-    "benchmark:semantic-diversity": "node --env-file=.env.local --import tsx ./scripts/run-semantic-diversity.ts"
+    "benchmark:semantic-diversity": "node --env-file=.env.local --import tsx ./scripts/run-semantic-diversity.ts",
+    "benchmark:orthographic-diversity": "node --env-file=.env.local --import tsx ./scripts/run-orthographic-diversity.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",
     "@vercel/analytics": "^2.0.1",
+    "an-array-of-english-words": "^2.0.0",
     "next": "16.2.0",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "word-list": "^4.1.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
