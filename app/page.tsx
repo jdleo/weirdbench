@@ -7,6 +7,8 @@ import {
 import { getTopModelPreview } from "@/lib/benchmark-store";
 import { siteConfig } from "@/lib/site";
 
+export const revalidate = 60;
+
 export default async function Home() {
   const benchmarks = benchmarkRegistry;
   const benchmarkPreviews = await Promise.all(

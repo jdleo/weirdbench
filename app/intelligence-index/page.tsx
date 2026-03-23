@@ -4,6 +4,8 @@ import Link from "next/link";
 import { siteConfig } from "@/lib/site";
 import { getIntelligenceIndex } from "@/lib/intelligence-index";
 
+export const revalidate = 60;
+
 export const metadata: Metadata = {
   title: "WeirdBench Intelligence Index",
   description:
