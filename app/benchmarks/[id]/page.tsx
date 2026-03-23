@@ -82,8 +82,7 @@ export default async function BenchmarkPage(props: PageProps<"/benchmarks/[id]">
       name: siteConfig.name,
       url: siteConfig.url,
     },
-    measurementTechnique:
-      "Generate 20 words, embed them, and score average pairwise semantic similarity.",
+    measurementTechnique: benchmark.methodology.measurementTechnique,
     variableMeasured: benchmark.scoreDirection,
   };
 
@@ -194,11 +193,7 @@ export default async function BenchmarkPage(props: PageProps<"/benchmarks/[id]">
               <p className="shell-label">Methodology</p>
               <h2 className="shell-title mt-3">How scoring works</h2>
               <p className="shell-copy mt-3 max-w-3xl text-sm sm:text-base">
-                Semantic Diversity asks a model to generate exactly 20 lowercase
-                English words that are as semantically unrelated as possible.
-                Each word is embedded, cosine similarity is computed for every
-                pair, and the final benchmark score is the average of those
-                similarities.
+                {benchmark.methodology.measurementTechnique}
               </p>
             </div>
 
@@ -206,22 +201,19 @@ export default async function BenchmarkPage(props: PageProps<"/benchmarks/[id]">
               <article className="shell-card rounded-[1.5rem] p-5">
                 <p className="shell-label">Prompt</p>
                 <p className="shell-copy mt-3 text-sm">
-                  Generate exactly 20 English words and return only a JSON array
-                  of lowercase single words.
+                  {benchmark.methodology.promptSummary}
                 </p>
               </article>
               <article className="shell-card rounded-[1.5rem] p-5">
                 <p className="shell-label">Score</p>
                 <p className="shell-copy mt-3 text-sm">
-                  Lower is better. Lower scores mean the chosen words are less
-                  semantically related to each other.
+                  {benchmark.methodology.scoreSummary}
                 </p>
               </article>
               <article className="shell-card rounded-[1.5rem] p-5">
                 <p className="shell-label">Execution</p>
                 <p className="shell-copy mt-3 text-sm">
-                  Benchmark runners execute locally, cache results in Neon, and
-                  skip recomputation for models that already have stored scores.
+                  {benchmark.methodology.executionSummary}
                 </p>
               </article>
             </div>

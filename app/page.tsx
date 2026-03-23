@@ -60,20 +60,28 @@ export default async function Home() {
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-nowrap items-center gap-2 overflow-x-auto sm:gap-3">
               <Link
                 href="https://github.com/jdleo/weirdbench"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="shell-button-secondary inline-flex items-center justify-center whitespace-nowrap px-5 py-2.5 text-sm"
+                className="shell-button-secondary inline-flex shrink-0 items-center justify-center whitespace-nowrap px-4 py-2.5 text-xs sm:px-5 sm:text-sm"
               >
                 GitHub
               </Link>
               <Link
                 href="/intelligence-index"
-                className="inline-flex items-center justify-center whitespace-nowrap rounded-full border border-white bg-white px-5 py-2.5 text-sm font-medium text-black transition-colors hover:bg-zinc-100"
+                className="inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-full border px-4 py-2.5 text-xs font-medium transition-colors sm:px-5 sm:text-sm"
+                style={{
+                  backgroundColor: "#ffffff",
+                  color: "#000000",
+                  borderColor: "#ffffff",
+                }}
               >
-                WeirdBench Intelligence Index
+                <span className="sm:hidden">Intelligence Index</span>
+                <span className="hidden sm:inline">
+                  WeirdBench Intelligence Index
+                </span>
               </Link>
             </div>
           </div>
