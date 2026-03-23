@@ -4,8 +4,8 @@ import { notFound } from "next/navigation";
 import {
   getBenchmarkById,
   getScoreDirectionLabel,
-  getScoresForBenchmark,
 } from "@/lib/benchmarks";
+import { getScoresForBenchmark } from "@/lib/benchmark-store";
 
 export default async function BenchmarkPage(props: PageProps<"/benchmarks/[id]">) {
   const { id } = await props.params;
@@ -15,7 +15,7 @@ export default async function BenchmarkPage(props: PageProps<"/benchmarks/[id]">
     notFound();
   }
 
-  const scores = getScoresForBenchmark(id);
+  const scores = await getScoresForBenchmark(benchmark);
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-[96rem] flex-col px-4 py-4 sm:px-6 sm:py-6">
@@ -68,29 +68,39 @@ export default async function BenchmarkPage(props: PageProps<"/benchmarks/[id]">
             <h2 className="shell-title mt-3">Current ranking</h2>
           </section>
 
-          <div className="grid gap-3">
-            {scores.map((row, index) => (
-              <article
-                key={`${row.benchmarkId}-${row.modelId}`}
-                className="shell-card rounded-[1.5rem] p-5"
-              >
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex min-w-0 items-center gap-4">
-                    <div className="rank-badge">{index + 1}</div>
-                    <div className="min-w-0">
-                      <p className="text-lg font-medium text-[var(--color-text)]">
-                        {row.modelId}
-                      </p>
-                      <p className="shell-copy mt-1 text-sm">
-                        Benchmark ID: {row.benchmarkId}
-                      </p>
+          {scores.length > 0 ? (
+            <div className="grid gap-3">
+              {scores.map((row, index) => (
+                <article
+                  key={`${row.benchmarkId}-${row.modelId}`}
+                  className="shell-card rounded-[1.5rem] p-5"
+                >
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex min-w-0 items-center gap-4">
+                      <div className="rank-badge">{index + 1}</div>
+                      <div className="min-w-0">
+                        <p className="text-lg font-medium text-[var(--color-text)]">
+                          {row.modelId}
+                        </p>
+                        <p className="shell-copy mt-1 text-sm">
+                          Benchmark ID: {row.benchmarkId}
+                        </p>
+                      </div>
                     </div>
+                    <div className="score-chip">{row.score.toFixed(3)}</div>
                   </div>
-                  <div className="score-chip">{row.score.toFixed(1)}</div>
-                </div>
-              </article>
-            ))}
-          </div>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <section className="shell-card rounded-[1.5rem] p-5 sm:p-6">
+              <p className="shell-label">No Scores Yet</p>
+              <p className="shell-copy mt-3 text-sm sm:text-base">
+                Run the local benchmark script to populate Neon, then reload
+                this page.
+              </p>
+            </section>
+          )}
         </div>
       </section>
     </main>

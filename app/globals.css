@@ -208,4 +208,9 @@ a {
     font-size: 1rem;
     font-weight: 600;
   }
+
+  .benchmark-preview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr));
+  }
 }

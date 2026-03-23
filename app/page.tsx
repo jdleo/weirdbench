@@ -4,9 +4,16 @@ import {
   benchmarkRegistry,
   getScoreDirectionLabel,
 } from "@/lib/benchmarks";
+import { getTopModelPreview } from "@/lib/benchmark-store";
 
-export default function Home() {
+export default async function Home() {
   const benchmarks = benchmarkRegistry;
+  const benchmarkPreviews = await Promise.all(
+    benchmarks.map(async (benchmark) => ({
+      benchmark,
+      topScores: await getTopModelPreview(benchmark, 3),
+    })),
+  );
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-[96rem] flex-col px-4 py-4 sm:px-6 sm:py-6">
@@ -85,8 +92,8 @@ export default function Home() {
             </p>
           </section>
 
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {benchmarks.map((benchmark) => (
+          <div className="benchmark-preview-grid gap-4">
+            {benchmarkPreviews.map(({ benchmark, topScores }) => (
               <article
                 key={benchmark.id}
                 className="shell-card rounded-[1.5rem] p-5"
@@ -103,20 +110,24 @@ export default function Home() {
                 <div className="mt-4">
                   <p className="shell-label">Top Models</p>
                   <div className="mt-2 space-y-2">
-                    {(benchmark.topModelPreview ?? []).slice(0, 3).map((modelId) => (
-                      <div key={modelId} className="result-row">
-                        <span>{modelId}</span>
-                        <span>preview</span>
+                    {topScores.length > 0 ? (
+                      topScores.map((row) => (
+                        <div key={row.modelId} className="result-row">
+                          <span>{row.modelId}</span>
+                          <span>{row.score.toFixed(3)}</span>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="result-row">
+                        <span>No scores yet</span>
+                        <span>run local script</span>
                       </div>
-                    ))}
+                    )}
                   </div>
                 </div>
                 <div className="mt-4 flex flex-wrap gap-2">
                   <span className="shell-pill px-3 py-1 text-xs">
                     {getScoreDirectionLabel(benchmark.scoreDirection)}
-                  </span>
-                  <span className="shell-pill px-3 py-1 text-xs">
-                    mock preview
                   </span>
                 </div>
                 <Link

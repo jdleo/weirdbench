@@ -1,36 +1,89 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# WeirdBench
 
-## Getting Started
+WeirdBench is an unconventional LLM benchmarking site.
 
-First, run the development server:
+The site reads benchmark scores from Neon Postgres.
+Benchmark execution happens locally.
+
+## How It Works
+
+- Benchmark definitions live in [`lib/benchmarks.ts`](/Users/johnleonardo/Documents/workspace/weirdbench/lib/benchmarks.ts).
+- The website reads leaderboard data from Neon through [`lib/benchmark-store.ts`](/Users/johnleonardo/Documents/workspace/weirdbench/lib/benchmark-store.ts).
+- Benchmark runner scripts execute locally, use your local env vars, and write scores into the database.
+- Scores are cached in Postgres by `(benchmark_id, model_id)`, so an existing model score is never recomputed unless you explicitly delete it.
+
+## Current Benchmark
+
+- `semantic-diversity`
+  - Source: [The Semantic Diversity Benchmark](https://jdleo.me/blog/semantic-diversity-benchmark)
+  - Task: generate exactly 20 English words that are maximally semantically unrelated
+  - Scoring: average pairwise semantic similarity
+  - Ranking: lower is better
+
+## Environment
+
+Expected in `.env.local`:
+
+- `DATABASE_URL`
+- `OPENROUTER_API_KEY`
+
+## Install
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Run The Site
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+pnpm dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Initialize The DB
 
-## Learn More
+```bash
+pnpm db:init
+```
 
-To learn more about Next.js, take a look at the following resources:
+This creates the `benchmark_scores` table if it does not already exist.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Add A Model To Semantic Diversity
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+pnpm benchmark:semantic-diversity <model-id>
+```
 
-## Deploy on Vercel
+Examples:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+pnpm benchmark:semantic-diversity google/gemini-2.5-pro
+pnpm benchmark:semantic-diversity anthropic/claude-opus-4.1
+pnpm benchmark:semantic-diversity openai/gpt-5
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Behavior:
+
+- Runs locally.
+- Uses `OPENROUTER_API_KEY`.
+- Writes the score to Neon using `DATABASE_URL`.
+- Returns cached data immediately if that model already has a stored score.
+
+## Common Commands
+
+```bash
+pnpm dev
+pnpm lint
+pnpm build
+pnpm db:init
+pnpm benchmark:semantic-diversity <model-id>
+```
+
+## Relevant Files
+
+- [app/page.tsx](/Users/johnleonardo/Documents/workspace/weirdbench/app/page.tsx)
+- [app/benchmarks/[id]/page.tsx](/Users/johnleonardo/Documents/workspace/weirdbench/app/benchmarks/[id]/page.tsx)
+- [lib/benchmarks.ts](/Users/johnleonardo/Documents/workspace/weirdbench/lib/benchmarks.ts)
+- [lib/benchmark-store.ts](/Users/johnleonardo/Documents/workspace/weirdbench/lib/benchmark-store.ts)
+- [lib/semantic-diversity.ts](/Users/johnleonardo/Documents/workspace/weirdbench/lib/semantic-diversity.ts)
+- [scripts/init-db.ts](/Users/johnleonardo/Documents/workspace/weirdbench/scripts/init-db.ts)
+- [scripts/run-semantic-diversity.ts](/Users/johnleonardo/Documents/workspace/weirdbench/scripts/run-semantic-diversity.ts)
