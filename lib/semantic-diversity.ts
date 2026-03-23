@@ -261,6 +261,10 @@ function normalizeWordList(content: string): string[] {
     ) {
       return sanitizeWords((parsed as { words: unknown[] }).words);
     }
+
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+      return sanitizeWords(flattenObjectWords(parsed as Record<string, unknown>));
+    }
   } catch {
     const jsonCandidate = extractJsonCandidate(normalizedContent);
 
@@ -279,6 +283,10 @@ function normalizeWordList(content: string): string[] {
           Array.isArray((parsed as { words?: unknown }).words)
         ) {
           return sanitizeWords((parsed as { words: unknown[] }).words);
+        }
+
+        if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+          return sanitizeWords(flattenObjectWords(parsed as Record<string, unknown>));
         }
       } catch {
         // Fall through to loose parsing.
@@ -316,6 +324,20 @@ function extractJsonCandidate(content: string): string | null {
   }
 
   return null;
+}
+
+function flattenObjectWords(record: Record<string, unknown>): unknown[] {
+  const values: unknown[] = [];
+
+  for (const [key, value] of Object.entries(record)) {
+    values.push(key);
+
+    if (typeof value === "string") {
+      values.push(value);
+    }
+  }
+
+  return values;
 }
 
 function extractTextContent(content: OpenRouterMessageContent): string {
