@@ -3,16 +3,25 @@ const RUN_COUNT = 3;
 const WORD_COUNT = 20;
 const MAX_GENERATION_ATTEMPTS = 5;
 
-const providerOverrides: Record<
-  string,
-  {
-    only?: string[];
-    order?: string[];
-    allow_fallbacks?: boolean;
-  }
-> = {
+type ProviderOverride = {
+  only?: string[];
+  order?: string[];
+  allow_fallbacks?: boolean;
+  require_parameters?: boolean;
+};
+
+type RequestOverride = {
+  provider?: ProviderOverride;
+  useResponseFormat?: boolean;
+  useReasoningExclude?: boolean;
+};
+
+const providerOverrides: Record<string, RequestOverride> = {
   "minimax/minimax-m2.5": {
-    allow_fallbacks: false,
+    provider: {
+      allow_fallbacks: false,
+      require_parameters: true,
+    },
   },
 };
 
@@ -98,29 +107,12 @@ async function generateSemanticDiversityWords(
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: getOpenRouterHeaders(),
-      body: JSON.stringify({
-        model: modelId,
-        messages: [
-          {
-            role: "user",
-            content:
-              attempt === 1
-                ? prompt
-                : buildRepairPrompt(bestWords),
-          },
-        ],
-        temperature: 0.1,
-        reasoning: {
-          exclude: true,
-        },
-        response_format: {
-          type: "json_object",
-        },
-        provider: {
-          require_parameters: true,
-          ...providerOverrides[modelId],
-        },
-      }),
+      body: JSON.stringify(
+        buildChatRequest({
+          modelId,
+          prompt: attempt === 1 ? prompt : buildRepairPrompt(bestWords),
+        }),
+      ),
     });
 
     if (!response.ok) {
@@ -179,6 +171,60 @@ async function generateSemanticDiversityWords(
   throw new Error(
     `Failed to generate exactly ${WORD_COUNT} words after ${MAX_GENERATION_ATTEMPTS} attempts.`,
   );
+}
+
+function buildChatRequest(input: {
+  modelId: string;
+  prompt: string;
+}): Record<string, unknown> {
+  const requestOverride = getRequestOverride(input.modelId);
+
+  return {
+    model: input.modelId,
+    messages: [
+      {
+        role: "user",
+        content: input.prompt,
+      },
+    ],
+    temperature: 0.1,
+    ...(requestOverride.useReasoningExclude !== false
+      ? {
+          reasoning: {
+            exclude: true,
+          },
+        }
+      : {}),
+    ...(requestOverride.useResponseFormat !== false
+      ? {
+          response_format: {
+            type: "json_object",
+          },
+        }
+      : {}),
+    provider: {
+      require_parameters: true,
+      ...(requestOverride.provider ?? {}),
+    },
+  };
+}
+
+function getRequestOverride(modelId: string): RequestOverride {
+  if (providerOverrides[modelId]) {
+    return providerOverrides[modelId];
+  }
+
+  if (modelId.startsWith("amazon/nova-")) {
+    return {
+      useResponseFormat: false,
+      useReasoningExclude: false,
+      provider: {
+        require_parameters: false,
+      },
+    };
+  }
+
+  return {};
 }
 
 function buildRepairPrompt(existingWords: string[]): string {
