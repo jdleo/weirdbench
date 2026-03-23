@@ -15,6 +15,7 @@
 
 # Data Rules
 
+- Run `pnpm db:init` for a fresh database before app reads or benchmark writes. Do not rely on runtime table creation.
 - Cache scores in DB by `(benchmark_id, model_id)`.
 - Never recompute a model if a score already exists, unless explicitly asked.
 - If a model fails during batch benchmark runs, skip it and continue.

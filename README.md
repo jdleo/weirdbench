@@ -45,7 +45,7 @@ pnpm dev
 pnpm db:init
 ```
 
-This creates the `benchmark_scores` table if it does not already exist.
+This is required before running the app or benchmark scripts against a fresh database. Runtime code does not auto-create tables.
 
 ## Add A Model To Semantic Diversity
 
