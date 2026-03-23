@@ -244,8 +244,10 @@ function mergeUniqueWords(left: string[], right: string[]): string[] {
 }
 
 function normalizeWordList(content: string): string[] {
+  const normalizedContent = stripMarkdownFences(content).trim();
+
   try {
-    const parsed = JSON.parse(content) as unknown;
+    const parsed = JSON.parse(normalizedContent) as unknown;
 
     if (Array.isArray(parsed)) {
       return sanitizeWords(parsed);
@@ -260,16 +262,60 @@ function normalizeWordList(content: string): string[] {
       return sanitizeWords((parsed as { words: unknown[] }).words);
     }
   } catch {
-    // Fall back to line / comma parsing.
+    const jsonCandidate = extractJsonCandidate(normalizedContent);
+
+    if (jsonCandidate) {
+      try {
+        const parsed = JSON.parse(jsonCandidate) as unknown;
+
+        if (Array.isArray(parsed)) {
+          return sanitizeWords(parsed);
+        }
+
+        if (
+          parsed &&
+          typeof parsed === "object" &&
+          "words" in parsed &&
+          Array.isArray((parsed as { words?: unknown }).words)
+        ) {
+          return sanitizeWords((parsed as { words: unknown[] }).words);
+        }
+      } catch {
+        // Fall through to loose parsing.
+      }
+    }
   }
 
-  const fallback = content
+  const fallback = normalizedContent
     .replace(/^\s*\[|\]\s*$/g, "")
     .split(/[\n,]/)
     .map((value) => value.trim())
     .filter(Boolean);
 
   return sanitizeWords(fallback);
+}
+
+function stripMarkdownFences(content: string): string {
+  return content
+    .replace(/^```[a-zA-Z0-9_-]*\s*/g, "")
+    .replace(/\s*```$/g, "")
+    .trim();
+}
+
+function extractJsonCandidate(content: string): string | null {
+  const arrayMatch = content.match(/\[[\s\S]*\]/);
+
+  if (arrayMatch) {
+    return arrayMatch[0];
+  }
+
+  const objectMatch = content.match(/\{[\s\S]*\}/);
+
+  if (objectMatch) {
+    return objectMatch[0];
+  }
+
+  return null;
 }
 
 function extractTextContent(content: OpenRouterMessageContent): string {
