@@ -8,11 +8,11 @@ const providerOverrides: Record<
   {
     only?: string[];
     order?: string[];
-    allowFallbacks?: boolean;
+    allow_fallbacks?: boolean;
   }
 > = {
   "minimax/minimax-m2.5": {
-    allowFallbacks: false,
+    allow_fallbacks: false,
   },
 };
 
