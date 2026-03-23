@@ -180,4 +180,32 @@ a {
   .result-row span:last-child {
     color: var(--color-text-muted);
   }
+
+  .rank-badge {
+    display: inline-flex;
+    height: 2.5rem;
+    width: 2.5rem;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--color-border);
+    border-radius: 9999px;
+    background: rgb(255 255 255 / 0.05);
+    color: var(--color-text);
+    font-size: 0.95rem;
+    font-weight: 600;
+  }
+
+  .score-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--color-border);
+    border-radius: 9999px;
+    background: rgb(255 255 255 / 0.04);
+    color: var(--color-text);
+    min-width: 5.5rem;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    font-weight: 600;
+  }
 }

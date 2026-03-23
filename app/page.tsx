@@ -119,12 +119,12 @@ export default function Home() {
                     mock preview
                   </span>
                 </div>
-                <button
-                  type="button"
+                <Link
+                  href={`/benchmarks/${benchmark.id}`}
                   className="shell-button-secondary mt-5 inline-flex w-full items-center justify-center px-4 py-2.5 text-sm font-medium"
                 >
                   View Benchmark
-                </button>
+                </Link>
               </article>
             ))}
           </div>
