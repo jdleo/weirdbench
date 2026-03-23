@@ -1,5 +1,18 @@
 type ChatRequestMode = "strict" | "relaxed" | "minimal";
 
+type ProviderOverride = {
+  only?: string[];
+  order?: string[];
+  allow_fallbacks?: boolean;
+  require_parameters?: boolean;
+};
+
+type RequestOverride = {
+  provider?: ProviderOverride;
+  useResponseFormat?: boolean;
+  useReasoningExclude?: boolean;
+};
+
 type OpenRouterChatResponse = {
   choices?: Array<{
     finish_reason?: string | null;
@@ -24,7 +37,16 @@ type OpenRouterMessageContent = string | OpenRouterContentPart[] | undefined;
 
 const OBSERVED_ITEM_COUNT = 6;
 const PREDICT_ITEM_COUNT = 3;
-const MAX_GENERATION_ATTEMPTS = 3;
+const MAX_GENERATION_ATTEMPTS = 5;
+
+const providerOverrides: Record<string, RequestOverride> = {
+  "minimax/minimax-m2.5": {
+    provider: {
+      allow_fallbacks: false,
+      require_parameters: true,
+    },
+  },
+};
 
 export type HiddenRuleSequenceCase = {
   id: string;
@@ -266,20 +288,73 @@ async function predictNextItems(
   modelId: string,
   testCase: HiddenRuleSequenceCase,
 ): Promise<string[]> {
+  let bestPrediction: string[] = [];
+
   for (let attempt = 1; attempt <= MAX_GENERATION_ATTEMPTS; attempt += 1) {
     const data = await requestChatCompletion({
       modelId,
       prompt:
         attempt === 1
           ? getCasePrompt(testCase)
-          : getRepairPrompt(testCase),
+          : getRepairPrompt(testCase, bestPrediction),
     });
-    const content = extractTextContent(data.choices?.[0]?.message?.content);
+    const choice = data.choices?.[0];
+    const message = choice?.message;
+    const content = extractTextContent(message?.content);
+
+    if (!content) {
+      logPredictionAttemptFailure({
+        modelId,
+        caseId: testCase.id,
+        attempt,
+        reason: "missing_content",
+        finishReason: choice?.finish_reason,
+        provider: data.provider,
+        contentType: describeContentShape(message?.content),
+        hasReasoning: Boolean(message?.reasoning),
+        hasReasoningDetails: Boolean(message?.reasoning_details?.length),
+      });
+      continue;
+    }
+
     const predictedNext = normalizePredictionList(content);
+
+    if (predictedNext.length === 0) {
+      logPredictionAttemptFailure({
+        modelId,
+        caseId: testCase.id,
+        attempt,
+        reason: "unparseable_content",
+        finishReason: choice?.finish_reason,
+        provider: data.provider,
+        contentType: describeContentShape(message?.content),
+        hasReasoning: Boolean(message?.reasoning),
+        hasReasoningDetails: Boolean(message?.reasoning_details?.length),
+        rawPreview: content.slice(0, 240),
+      });
+      continue;
+    }
+
+    if (predictedNext.length > bestPrediction.length) {
+      bestPrediction = predictedNext;
+    }
 
     if (predictedNext.length === PREDICT_ITEM_COUNT) {
       return predictedNext;
     }
+
+    logPredictionAttemptFailure({
+      modelId,
+      caseId: testCase.id,
+      attempt,
+      reason: "partial_prediction",
+      finishReason: choice?.finish_reason,
+      provider: data.provider,
+      contentType: describeContentShape(message?.content),
+      hasReasoning: Boolean(message?.reasoning),
+      hasReasoningDetails: Boolean(message?.reasoning_details?.length),
+      rawPreview: content.slice(0, 240),
+    });
   }
 
   throw new Error(
@@ -296,12 +371,21 @@ function getCasePrompt(testCase: HiddenRuleSequenceCase): string {
   ].join(" ");
 }
 
-function getRepairPrompt(testCase: HiddenRuleSequenceCase): string {
+function getRepairPrompt(
+  testCase: HiddenRuleSequenceCase,
+  existingPrediction: string[],
+): string {
   return [
     "Your previous answer was invalid.",
     "Return exactly 3 next items for the sequence.",
     "Return only JSON in the form {\"next\":[...]} or a JSON array.",
     "Preserve exact item formatting.",
+    ...(existingPrediction.length > 0
+      ? [
+          `You already returned this partial candidate: ${JSON.stringify(existingPrediction)}.`,
+          "Return the complete 3-item continuation, not just the missing suffix.",
+        ]
+      : []),
     `Sequence: ${JSON.stringify(testCase.sequence)}`,
   ].join(" ");
 }
@@ -311,9 +395,19 @@ function buildChatRequest(input: {
   prompt: string;
   mode: ChatRequestMode;
 }): Record<string, unknown> {
-  const useResponseFormat = input.mode === "strict";
-  const useReasoningExclude = input.mode !== "minimal";
-  const requireParameters = input.mode === "strict";
+  const requestOverride = getRequestOverride(input.modelId);
+  const useResponseFormat =
+    input.mode === "strict"
+      ? requestOverride.useResponseFormat !== false
+      : false;
+  const useReasoningExclude =
+    input.mode === "minimal"
+      ? false
+      : requestOverride.useReasoningExclude !== false;
+  const requireParameters =
+    input.mode === "strict"
+      ? requestOverride.provider?.require_parameters ?? true
+      : false;
 
   return {
     model: input.modelId,
@@ -340,6 +434,7 @@ function buildChatRequest(input: {
       : {}),
     provider: {
       require_parameters: requireParameters,
+      ...(requestOverride.provider ?? {}),
     },
   };
 }
@@ -387,6 +482,24 @@ async function requestChatCompletion(input: {
   }
 
   throw lastError ?? new Error("OpenRouter chat request failed in all modes.");
+}
+
+function getRequestOverride(modelId: string): RequestOverride {
+  if (providerOverrides[modelId]) {
+    return providerOverrides[modelId];
+  }
+
+  if (modelId.startsWith("amazon/nova-")) {
+    return {
+      useResponseFormat: false,
+      useReasoningExclude: false,
+      provider: {
+        require_parameters: false,
+      },
+    };
+  }
+
+  return {};
 }
 
 function normalizePredictionList(content: string): string[] {
@@ -478,6 +591,46 @@ function extractTextContent(content: OpenRouterMessageContent): string {
   }
 
   return "";
+}
+
+function describeContentShape(content: OpenRouterMessageContent): string {
+  if (typeof content === "string") {
+    return "string";
+  }
+
+  if (Array.isArray(content)) {
+    return "array";
+  }
+
+  if (content == null) {
+    return "empty";
+  }
+
+  return typeof content;
+}
+
+function logPredictionAttemptFailure(details: {
+  modelId: string;
+  caseId: string;
+  attempt: number;
+  reason: string;
+  finishReason?: string | null;
+  provider?: string;
+  contentType: string;
+  hasReasoning: boolean;
+  hasReasoningDetails: boolean;
+  rawPreview?: string;
+}): void {
+  console.warn(
+    JSON.stringify(
+      {
+        event: "hidden_rule_sequence_attempt_failed",
+        ...details,
+      },
+      null,
+      2,
+    ),
+  );
 }
 
 function getOpenRouterHeaders(): HeadersInit {
