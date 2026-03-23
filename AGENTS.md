@@ -19,6 +19,7 @@
 - Never recompute a model if a score already exists, unless explicitly asked.
 - If a model fails during batch benchmark runs, skip it and continue.
 - Current score table is intentionally simple: `benchmark_id`, `model_id`, `score`, `metadata`, `created_at`.
+- Prefer bounded concurrency in runner scripts for model-level work; current default is parallel across models with a small cap, while each model still does cache -> run -> write sequentially.
 
 # OpenRouter Rules
 
