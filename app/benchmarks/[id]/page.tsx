@@ -47,27 +47,28 @@ export default async function BenchmarkPage(props: PageProps<"/benchmarks/[id]">
         </div>
       </header>
 
-      <section className="shell-panel hero-panel rounded-[2rem] px-6 py-8 sm:px-8 sm:py-10 xl:px-10 xl:py-12">
-        <p className="shell-label">{benchmark.id}</p>
-        <h1 className="shell-display mt-4">{benchmark.name}</h1>
-        <p className="shell-copy mt-5 max-w-2xl text-base sm:text-lg">
-          {benchmark.description}
-        </p>
-        <div className="mt-6 flex flex-wrap gap-2">
-          <span className="shell-pill px-3 py-1 text-xs">
-            {getScoreDirectionLabel(benchmark.scoreDirection)}
-          </span>
-          <span className="shell-pill px-3 py-1 text-xs">mock leaderboard</span>
+      <section className="shell-panel rounded-[2rem] px-5 py-5 sm:px-6 sm:py-6">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="max-w-3xl">
+            <p className="shell-label">{benchmark.id}</p>
+            <h1 className="mt-3 text-[2rem] font-medium tracking-[var(--tracking-tight)] text-[var(--color-text)] sm:text-[2.4rem]">
+              {benchmark.name}
+            </h1>
+            <p className="shell-copy mt-3 max-w-2xl text-sm sm:text-base">
+              {benchmark.description}
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <span className="shell-pill px-3 py-1 text-xs">
+              {getScoreDirectionLabel(benchmark.scoreDirection)}
+            </span>
+          </div>
         </div>
       </section>
 
       <section className="shell-panel mt-4 rounded-[2rem] p-4 sm:p-5">
-        <div className="grid gap-4">
-          <section className="shell-card rounded-[1.5rem] p-5 sm:p-6">
-            <p className="shell-label">Leaderboard</p>
-            <h2 className="shell-title mt-3">Current ranking</h2>
-          </section>
-
+        <div className="grid gap-3">
           {scores.length > 0 ? (
             <div className="grid gap-3">
               {scores.map((row, index) => (
@@ -77,13 +78,22 @@ export default async function BenchmarkPage(props: PageProps<"/benchmarks/[id]">
                 >
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex min-w-0 items-center gap-4">
-                      <div className="rank-badge">{index + 1}</div>
+                      <div
+                        className={`rank-badge ${
+                          index === 0
+                            ? "rank-badge-gold"
+                            : index === 1
+                              ? "rank-badge-silver"
+                              : index === 2
+                                ? "rank-badge-bronze"
+                                : ""
+                        }`}
+                      >
+                        {index + 1}
+                      </div>
                       <div className="min-w-0">
                         <p className="text-lg font-medium text-[var(--color-text)]">
                           {row.modelId}
-                        </p>
-                        <p className="shell-copy mt-1 text-sm">
-                          Benchmark ID: {row.benchmarkId}
                         </p>
                       </div>
                     </div>
@@ -94,8 +104,7 @@ export default async function BenchmarkPage(props: PageProps<"/benchmarks/[id]">
             </div>
           ) : (
             <section className="shell-card rounded-[1.5rem] p-5 sm:p-6">
-              <p className="shell-label">No Scores Yet</p>
-              <p className="shell-copy mt-3 text-sm sm:text-base">
+              <p className="shell-copy text-sm sm:text-base">
                 Run the local benchmark script to populate Neon, then reload
                 this page.
               </p>

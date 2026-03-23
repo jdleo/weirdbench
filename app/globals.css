@@ -195,6 +195,33 @@ a {
     font-weight: 600;
   }
 
+  .rank-badge-gold {
+    border-color: rgb(250 204 21 / 0.95);
+    background:
+      radial-gradient(circle at top, rgb(255 244 180 / 0.75), transparent 42%),
+      linear-gradient(180deg, rgb(234 179 8 / 0.95), rgb(161 98 7 / 0.95));
+    box-shadow: 0 0 0 1px rgb(250 204 21 / 0.18), 0 10px 24px rgb(234 179 8 / 0.22);
+    color: rgb(24 24 27);
+  }
+
+  .rank-badge-silver {
+    border-color: rgb(226 232 240 / 0.95);
+    background:
+      radial-gradient(circle at top, rgb(255 255 255 / 0.72), transparent 42%),
+      linear-gradient(180deg, rgb(203 213 225 / 0.95), rgb(100 116 139 / 0.95));
+    box-shadow: 0 0 0 1px rgb(226 232 240 / 0.18), 0 10px 24px rgb(148 163 184 / 0.2);
+    color: rgb(24 24 27);
+  }
+
+  .rank-badge-bronze {
+    border-color: rgb(251 146 60 / 0.95);
+    background:
+      radial-gradient(circle at top, rgb(255 219 182 / 0.72), transparent 42%),
+      linear-gradient(180deg, rgb(194 101 32 / 0.95), rgb(124 45 18 / 0.95));
+    box-shadow: 0 0 0 1px rgb(251 146 60 / 0.18), 0 10px 24px rgb(194 101 32 / 0.22);
+    color: rgb(255 244 236);
+  }
+
   .score-chip {
     display: inline-flex;
     align-items: center;

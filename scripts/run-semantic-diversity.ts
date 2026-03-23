@@ -3,7 +3,6 @@ import { getBenchmarkById } from "@/lib/benchmarks";
 import { runSemanticDiversityBenchmark } from "@/lib/semantic-diversity";
 
 const benchmarkId = "semantic-diversity";
-const modelId = process.argv[2] ?? "openai/gpt-4o-mini";
 
 async function main() {
   const benchmark = getBenchmarkById(benchmarkId);
@@ -12,48 +11,65 @@ async function main() {
     throw new Error(`Unknown benchmark: ${benchmarkId}`);
   }
 
-  const existing = await getBenchmarkScore(benchmark.id, modelId);
+  const modelIds = getModelIds(process.argv.slice(2));
 
-  if (existing) {
+  for (const modelId of modelIds) {
+    const existing = await getBenchmarkScore(benchmark.id, modelId);
+
+    if (existing) {
+      console.log(
+        JSON.stringify(
+          {
+            benchmarkId: benchmark.id,
+            modelId,
+            cached: true,
+            score: existing.score,
+          },
+          null,
+          2,
+        ),
+      );
+      continue;
+    }
+
+    const result = await runSemanticDiversityBenchmark(modelId);
+
+    await upsertBenchmarkScore({
+      benchmarkId: benchmark.id,
+      modelId,
+      score: result.averageScore,
+      metadata: {
+        prompt: result.prompt,
+        embeddingModel: result.embeddingModel,
+        runs: result.runs,
+      },
+    });
+
     console.log(
       JSON.stringify(
         {
           benchmarkId: benchmark.id,
           modelId,
-          cached: true,
-          score: existing.score,
+          cached: false,
+          score: result.averageScore,
         },
         null,
         2,
       ),
     );
-    return;
   }
+}
 
-  const result = await runSemanticDiversityBenchmark(modelId);
+function getModelIds(args: string[]): string[] {
+  const parsed = args
+    .flatMap((arg) => arg.split(","))
+    .map((value) => value.trim())
+    .filter(Boolean);
 
-  await upsertBenchmarkScore({
-    benchmarkId: benchmark.id,
-    modelId,
-    score: result.averageScore,
-    metadata: {
-      prompt: result.prompt,
-      embeddingModel: result.embeddingModel,
-      runs: result.runs,
-    },
-  });
+  const modelIds = parsed.length > 0 ? parsed : ["openai/gpt-4o-mini"];
 
-  console.log(
-    JSON.stringify(
-      {
-        benchmarkId: benchmark.id,
-        modelId,
-        cached: false,
-        score: result.averageScore,
-      },
-      null,
-      2,
-    ),
+  return modelIds.filter(
+    (value, index, allValues) => allValues.indexOf(value) === index,
   );
 }
 

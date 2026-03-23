@@ -59,6 +59,8 @@ Examples:
 pnpm benchmark:semantic-diversity google/gemini-2.5-pro
 pnpm benchmark:semantic-diversity anthropic/claude-opus-4.1
 pnpm benchmark:semantic-diversity openai/gpt-5
+pnpm benchmark:semantic-diversity google/gemini-2.5-pro,anthropic/claude-opus-4.1,openai/gpt-5
+pnpm benchmark:semantic-diversity google/gemini-2.5-pro anthropic/claude-opus-4.1 openai/gpt-5
 ```
 
 Behavior:
