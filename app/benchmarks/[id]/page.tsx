@@ -172,7 +172,7 @@ export default async function BenchmarkPage(props: PageProps<"/benchmarks/[id]">
                           </p>
                         </div>
                       </div>
-                      <div className="score-chip">{row.score.toFixed(3)}</div>
+                      <div className="score-chip">{row.score.toFixed(4)}</div>
                     </div>
                   </article>
                 ))}
