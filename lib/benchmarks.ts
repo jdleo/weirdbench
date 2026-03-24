@@ -24,6 +24,24 @@ export type BenchmarkScoreRow = {
 
 export const benchmarkRegistry: BenchmarkDefinition[] = [
   {
+    id: "nutrition-prediction",
+    name: "Nutrition Prediction",
+    scoreDirection: "higher",
+    description:
+      "Predict calories, protein, carbs, and fat from ingredient lists for a fixed 50-dish Nutrition5k sample. Higher is better.",
+    sourceUrl: "https://jdleo.me/blog/nutrition-benchmark",
+    methodology: {
+      measurementTechnique:
+        "Fetch Nutrition5k dish metadata, deterministically sample 50 dishes that have at least 3 ingredients and 100+ calories, prompt the model once per dish, then compute per-field MAPE and Pearson correlation.",
+      promptSummary:
+        'Given only the ingredient list, return JSON with numeric `calories`, `protein`, `carbs`, and `fat` fields and no extra text.',
+      scoreSummary:
+        "Higher is better. Overall score is 60% accuracy and 40% average correlation, where accuracy = 100 / (1 + average MAPE percentage).",
+      executionSummary:
+        "Benchmark runners execute locally, use OpenRouter for predictions, fetch the fixed Nutrition5k metadata sample, cache results in Neon, and skip recomputation for models that already have stored scores.",
+    },
+  },
+  {
     id: "semantic-diversity",
     name: "Semantic Diversity",
     scoreDirection: "lower",
