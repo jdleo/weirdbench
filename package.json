@@ -10,7 +10,8 @@
     "db:init": "node --env-file=.env.local --import tsx ./scripts/init-db.ts",
     "benchmark:nutrition-prediction": "node --env-file=.env.local --import tsx ./scripts/run-nutrition-prediction.ts",
     "benchmark:semantic-diversity": "node --env-file=.env.local --import tsx ./scripts/run-semantic-diversity.ts",
-    "benchmark:orthographic-diversity": "node --env-file=.env.local --import tsx ./scripts/run-orthographic-diversity.ts"
+    "benchmark:orthographic-diversity": "node --env-file=.env.local --import tsx ./scripts/run-orthographic-diversity.ts",
+    "benchmark:wordle": "node --env-file=.env.local --import tsx ./scripts/run-wordle.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",

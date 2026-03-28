@@ -76,6 +76,24 @@ export const benchmarkRegistry: BenchmarkDefinition[] = [
         "Validation and scoring happen locally with no judge model and no human grading, and results are cached in Neon by benchmark and model ID.",
     },
   },
+  {
+    id: "wordle",
+    name: "Wordle",
+    scoreDirection: "lower",
+    description:
+      "Play 20 recent Wordle answers turn by turn with standard gray/yellow/green feedback. Invalid guesses still cost a turn, scores are capped at 10 turns per puzzle, and lower is better.",
+    sourceUrl: "https://www.rockpapershotgun.com/wordle-past-answers",
+    methodology: {
+      measurementTechnique:
+        "Use a fixed set of 20 recent Wordle answers, run a fresh chat loop for each puzzle, and score the average turns needed to solve while applying standard duplicate-letter feedback rules.",
+      promptSummary:
+        "The model is told to reply with exactly one 5-letter word per turn, that any extra text is penalized, and that duplicate letters are allowed.",
+      scoreSummary:
+        "Lower is better. Each puzzle score is the turn the word is solved on, or 10 if the model never solves it within 10 turns. Invalid guesses still count as turns.",
+      executionSummary:
+        "Benchmark runners execute locally, simulate the Wordle judge deterministically, cache results in Neon, and skip recomputation for models that already have stored scores.",
+    },
+  },
 ];
 
 export function getBenchmarkById(id: string): BenchmarkDefinition | undefined {
