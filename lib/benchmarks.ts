@@ -24,6 +24,25 @@ export type BenchmarkScoreRow = {
 
 export const benchmarkRegistry: BenchmarkDefinition[] = [
   {
+    id: "ai-writing-detection",
+    name: "AI Writing Detection",
+    scoreDirection: "higher",
+    description:
+      "Classify essays from a fixed balanced sample of 50 human-written and 50 AI-generated examples from the AI Generated Essays Dataset. Higher is better.",
+    sourceUrl:
+      "https://www.kaggle.com/datasets/denvermagtibay/ai-generated-essays-dataset",
+    methodology: {
+      measurementTechnique:
+        "Read a fixed deterministic sample of 50 human essays and 50 AI essays from the downloaded Kaggle dataset, prompt the model once per essay to predict whether it is AI-generated, then compute binary classification precision, recall, and F1 for the AI class.",
+      promptSummary:
+        'Each essay is shown once and the model must return exactly one character: "1" for AI-generated or "0" for human-written, with no explanation.',
+      scoreSummary:
+        "Higher is better. The benchmark score is the F1 score for detecting AI-generated essays, using label 1 as the positive class.",
+      executionSummary:
+        "Benchmark runners execute locally, read the dataset from disk, use OpenRouter for predictions with reasoning disabled, cache results in Neon by benchmark and model ID, and skip recomputation for models that already have stored scores.",
+    },
+  },
+  {
     id: "nutrition-prediction",
     name: "Nutrition Prediction",
     scoreDirection: "higher",
