@@ -9,7 +9,7 @@ export const revalidate = 60;
 export const metadata: Metadata = {
   title: "WeirdBench Intelligence Index",
   description:
-    "A consolidated WeirdBench ranking across all benchmarks, normalized across mixed score directions and adjusted for benchmark coverage.",
+    "A consolidated WeirdBench ranking across all benchmarks, normalized relative to each benchmark leader and adjusted for benchmark coverage.",
   alternates: {
     canonical: "/intelligence-index",
   },
@@ -18,7 +18,7 @@ export const metadata: Metadata = {
     url: `${siteConfig.url}/intelligence-index`,
     title: "WeirdBench Intelligence Index",
     description:
-      "A consolidated WeirdBench ranking across all benchmarks, normalized across mixed score directions and adjusted for benchmark coverage.",
+      "A consolidated WeirdBench ranking across all benchmarks, normalized relative to each benchmark leader and adjusted for benchmark coverage.",
     siteName: siteConfig.name,
     images: [
       {
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "WeirdBench Intelligence Index",
     description:
-      "A consolidated WeirdBench ranking across all benchmarks, normalized across mixed score directions and adjusted for benchmark coverage.",
+      "A consolidated WeirdBench ranking across all benchmarks, normalized relative to each benchmark leader and adjusted for benchmark coverage.",
     images: [siteConfig.ogImage],
     creator: siteConfig.xHandle,
   },
@@ -48,7 +48,7 @@ export default async function IntelligenceIndexPage() {
     "@type": "Dataset",
     name: "WeirdBench Intelligence Index",
     description:
-      "A consolidated WeirdBench ranking across all benchmarks, normalized into a shared 0-100 scale and adjusted for benchmark coverage.",
+      "A consolidated WeirdBench ranking across all benchmarks, normalized relative to each benchmark leader and adjusted for benchmark coverage.",
     url: `${siteConfig.url}/intelligence-index`,
     creator: {
       "@type": "Organization",
@@ -61,7 +61,7 @@ export default async function IntelligenceIndexPage() {
       url: siteConfig.url,
     },
     measurementTechnique:
-      "Each benchmark leaderboard is converted into a 0-100 normalized rank score, then each model's average is multiplied by benchmark coverage ratio.",
+      "Each benchmark score is normalized relative to that benchmark leader, then each model's average is multiplied by benchmark coverage ratio.",
   };
 
   return (
@@ -108,8 +108,9 @@ export default async function IntelligenceIndexPage() {
               </h1>
               <p className="shell-copy mt-3 max-w-2xl text-sm sm:text-base">
                 A single ranking across every WeirdBench benchmark. Raw scores are
-                first converted into benchmark-local rank scores so lower-is-better
-                and higher-is-better benchmarks can live in the same table.
+                first converted into benchmark-local scores relative to the leader,
+                so small raw gaps stay small while lower-is-better and higher-is-better
+                benchmarks can still live in the same table.
               </p>
             </div>
 
@@ -199,11 +200,10 @@ export default async function IntelligenceIndexPage() {
               <p className="shell-label">Methodology</p>
               <h2 className="shell-title mt-3">How index scoring works</h2>
               <p className="shell-copy mt-3 max-w-3xl text-sm sm:text-base">
-                Each benchmark is ranked independently and converted into a
-                normalized 0-100 scale, where 100 is first place and 0 is last
-                place for that benchmark. This avoids mixing incompatible raw
-                score scales and automatically respects both lower-is-better and
-                higher-is-better benchmarks.
+                Each benchmark is normalized relative to its current best raw
+                score instead of being flattened into leaderboard positions. That
+                means ties stay tied, near-ties stay near-ties, and lower-is-better
+                benchmarks still compare cleanly with higher-is-better ones.
               </p>
             </div>
 
@@ -211,8 +211,9 @@ export default async function IntelligenceIndexPage() {
               <article className="shell-card rounded-[1.5rem] p-5">
                 <p className="shell-label">Normalization</p>
                 <p className="shell-copy mt-3 text-sm">
-                  A model gets a benchmark-local rank score from 0 to 100 based
-                  on its leaderboard position within that benchmark.
+                  Higher-is-better benchmarks are scored relative to the leader.
+                  Lower-is-better benchmarks use the inverse ratio to the leader,
+                  with a safe fallback if scores cross zero.
                 </p>
               </article>
               <article className="shell-card rounded-[1.5rem] p-5">

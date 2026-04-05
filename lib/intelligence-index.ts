@@ -40,17 +40,7 @@ export async function getIntelligenceIndex(): Promise<IntelligenceIndexEntry[]> 
   const benchmarkScoreMaps = new Map(
     benchmarks.map(({ benchmark, scores }) => [
       benchmark.id,
-      new Map(
-        scores.map((score, index) => [
-          score.modelId,
-          {
-            benchmarkId: benchmark.id,
-            benchmarkName: benchmark.name,
-            rawScore: score.score,
-            normalizedScore: getNormalizedRankScore(index, scores.length),
-          },
-        ]),
-      ),
+      createBenchmarkScoreMap(benchmark, scores),
     ]),
   );
 
@@ -99,10 +89,85 @@ export async function getIntelligenceIndex(): Promise<IntelligenceIndexEntry[]> 
     });
 }
 
-function getNormalizedRankScore(index: number, count: number): number {
-  if (count <= 1) {
+function createBenchmarkScoreMap(
+  benchmark: (typeof benchmarkRegistry)[number],
+  scores: BenchmarkScoreRow[],
+): Map<string, IntelligenceIndexBenchmarkScore> {
+  const normalizedScoreByModelId = getNormalizedScoreByModelId(benchmark, scores);
+
+  return new Map(
+    scores.map((score) => [
+      score.modelId,
+      {
+        benchmarkId: benchmark.id,
+        benchmarkName: benchmark.name,
+        rawScore: score.score,
+        normalizedScore: normalizedScoreByModelId.get(score.modelId) ?? 0,
+      },
+    ]),
+  );
+}
+
+function getNormalizedScoreByModelId(
+  benchmark: (typeof benchmarkRegistry)[number],
+  scores: BenchmarkScoreRow[],
+): Map<string, number> {
+  if (scores.length === 0) {
+    return new Map();
+  }
+
+  const rawScores = scores.map((score) => score.score);
+  const bestScore = benchmark.scoreDirection === "higher"
+    ? Math.max(...rawScores)
+    : Math.min(...rawScores);
+  const worstScore = benchmark.scoreDirection === "higher"
+    ? Math.min(...rawScores)
+    : Math.max(...rawScores);
+
+  return new Map(
+    scores.map((score) => [
+      score.modelId,
+      normalizeBenchmarkScore({
+        rawScore: score.score,
+        bestScore,
+        worstScore,
+        scoreDirection: benchmark.scoreDirection,
+      }),
+    ]),
+  );
+}
+
+function normalizeBenchmarkScore(input: {
+  rawScore: number;
+  bestScore: number;
+  worstScore: number;
+  scoreDirection: (typeof benchmarkRegistry)[number]["scoreDirection"];
+}): number {
+  const { rawScore, bestScore, worstScore, scoreDirection } = input;
+
+  if (bestScore === worstScore) {
     return 100;
   }
 
-  return ((count - 1 - index) / (count - 1)) * 100;
+  if (scoreDirection === "higher") {
+    if (bestScore > 0 && rawScore >= 0) {
+      return clampScore((rawScore / bestScore) * 100);
+    }
+
+    return clampScore(((rawScore - worstScore) / (bestScore - worstScore)) * 100);
+  }
+
+  if (bestScore > 0 && rawScore > 0) {
+    return clampScore((bestScore / rawScore) * 100);
+  }
+
+  return clampScore(((worstScore - rawScore) / (worstScore - bestScore)) * 100);
+}
+
+function clampScore(value: number): number {
+  if (!Number.isFinite(value)) {
+    return 0;
+  }
+
+  return Math.min(100, Math.max(0, value));
 }
