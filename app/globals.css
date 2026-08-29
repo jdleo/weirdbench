@@ -61,8 +61,11 @@
 }
 
 .el-logo-mark {
-  width: 1.75rem;
-  height: 1.75rem;
+  width: 1.85rem;
+  height: 1.85rem;
+  padding: 0.28rem;
+  border-radius: 7px;
+  background: var(--el-ink);
   object-fit: contain;
 }
 
@@ -379,7 +382,7 @@ a.el-btn-light,
 }
 
 .el-card-name {
-  margin: 0.65rem 0 0;
+  margin: 0;
   font-size: 1.2rem;
   font-weight: 550;
   line-height: 1.2;

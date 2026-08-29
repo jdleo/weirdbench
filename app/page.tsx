@@ -1,8 +1,5 @@
 import Link from "next/link";
-import {
-  benchmarkRegistry,
-  getScoreDirectionLabel,
-} from "@/lib/benchmarks";
+import { benchmarkRegistry } from "@/lib/benchmarks";
 import { getTopModelPreview } from "@/lib/benchmark-store";
 import { siteConfig } from "@/lib/site";
 import { ArrowUpRightIcon, PageShell } from "@/components/chrome";
@@ -104,10 +101,6 @@ export default async function Home() {
                 href={`/benchmarks/${benchmark.id}`}
                 className="el-card"
               >
-                <div className="el-post-meta">
-                  <span>{benchmark.id}</span>
-                  <span>{getScoreDirectionLabel(benchmark.scoreDirection)}</span>
-                </div>
                 <h3 className="el-card-name">{benchmark.name}</h3>
                 {benchmark.description ? (
                   <p className="el-card-desc">{benchmark.description}</p>
