@@ -8,7 +8,7 @@ const MATCH_PENALTY = 20;
 const REJECT_PENALTY = 20;
 const INVALID_PENALTY = 200;
 const EVAL_TIMEOUT_MS = 3_000;
-const REQUEST_TIMEOUT_MS = 120_000;
+const REQUEST_TIMEOUT_MS = 60_000;
 
 type ProviderOverride = {
   only?: string[];
