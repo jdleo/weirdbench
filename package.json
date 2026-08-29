@@ -12,7 +12,11 @@
     "benchmark:nutrition-prediction": "node --env-file=.env.local --import tsx ./scripts/run-nutrition-prediction.ts",
     "benchmark:semantic-diversity": "node --env-file=.env.local --import tsx ./scripts/run-semantic-diversity.ts",
     "benchmark:orthographic-diversity": "node --env-file=.env.local --import tsx ./scripts/run-orthographic-diversity.ts",
-    "benchmark:wordle": "node --env-file=.env.local --import tsx ./scripts/run-wordle.ts"
+    "benchmark:leetcode-contest-hards": "node --env-file=.env.local --import tsx ./scripts/run-leetcode-contest-hards.ts",
+    "validate:leetcode-contest-hards-oracles": "node --env-file=.env.local --import tsx ./scripts/validate-leetcode-contest-hards-oracles.ts",
+    "benchmark:wordle": "node --env-file=.env.local --import tsx ./scripts/run-wordle.ts",
+    "benchmark:regex-golf": "node --env-file=.env.local --import tsx ./scripts/run-regex-golf.ts",
+    "validate:regex-golf-puzzles": "node --env-file=.env.local --import tsx ./scripts/validate-regex-golf-puzzles.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",

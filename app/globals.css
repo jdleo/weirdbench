@@ -735,6 +735,10 @@ html {
     display: none;
   }
 
+  .el-nav-action-github {
+    display: none;
+  }
+
   .el-hero {
     padding-top: 5.5rem;
     padding-bottom: 2rem;

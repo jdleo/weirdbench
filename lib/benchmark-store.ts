@@ -93,6 +93,16 @@ export async function getBenchmarkScore(
   };
 }
 
+export async function getDistinctModelIds(): Promise<string[]> {
+  const rows = (await sql`
+    SELECT DISTINCT model_id
+    FROM benchmark_scores
+    ORDER BY model_id;
+  `) as Array<{ model_id: string }>;
+
+  return rows.map((row) => row.model_id);
+}
+
 export async function upsertBenchmarkScore(
   row: BenchmarkScoreRow,
 ): Promise<void> {

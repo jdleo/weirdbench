@@ -58,7 +58,7 @@ export function SiteNav({ activeId }: { activeId?: "home" | "index" }) {
           href="https://github.com/jdleo/weirdbench"
           target="_blank"
           rel="noopener noreferrer"
-          className="el-nav-link"
+          className="el-nav-link el-nav-action-github"
         >
           GitHub
         </a>

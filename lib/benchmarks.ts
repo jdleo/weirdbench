@@ -24,6 +24,23 @@ export type BenchmarkScoreRow = {
 
 export const benchmarkRegistry: BenchmarkDefinition[] = [
   {
+    id: "regex-golf",
+    name: "Regex Golf",
+    scoreDirection: "lower",
+    description:
+      "Generate the shortest valid regular expression matching all 10 target strings while excluding all 10 distractor strings across 25 deterministically generated puzzles. Lower is better.",
+    methodology: {
+      measurementTechnique:
+        "Generate 25 puzzle pairs deterministically from committed generator code (word-corpus predicates with fixed strides plus enumerated alphabets), prompt the model once per puzzle, then evaluate each submission with a local Python re.search runner and score regex length plus penalties.",
+      promptSummary:
+        "The model receives the MATCH and REJECT string lists and must reply with only the raw regular expression in Python re syntax.",
+      scoreSummary:
+        "Lower is better. Per puzzle: regex length plus 20 per missed MATCH, 20 per falsely matched REJECT, and a flat 200 for invalid regex or evaluation timeout. The benchmark score is the average across all 25 puzzles.",
+      executionSummary:
+        "Benchmark runners execute locally, evaluate submissions with a sandboxed Python subprocess that is killed on timeout to catch catastrophic backtracking, use OpenRouter with reasoning output excluded, cache results in Neon, and skip recomputation for models that already have stored scores.",
+    },
+  },
+  {
     id: "ai-writing-detection",
     name: "AI Writing Detection",
     scoreDirection: "higher",
