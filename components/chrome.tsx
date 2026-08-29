@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import type { ReactNode } from "react";
 
 export function ArrowUpRightIcon({ className }: { className?: string }) {
@@ -23,6 +24,14 @@ export function SiteNav({ activeId }: { activeId?: "home" | "index" }) {
   return (
     <header className="el-nav">
       <Link href="/" className="el-logo" aria-label="WeirdBench home">
+        <Image
+          src="/weirdbench-mark.png"
+          alt=""
+          width={28}
+          height={28}
+          className="el-logo-mark"
+          priority
+        />
         WeirdBench
       </Link>
       <nav className="el-nav-links" aria-label="Primary">
