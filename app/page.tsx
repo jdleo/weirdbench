@@ -17,7 +17,6 @@ export default async function Home() {
       topScores: await getTopModelPreview(benchmark, 3),
     })),
   );
-  const leader = benchmarkPreviews[0]?.topScores[0];
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "WebSite",
@@ -66,26 +65,6 @@ export default async function Home() {
                 Read the index
               </Link>
             </div>
-
-            <div className="el-hero-meta">
-              <span>Open source</span>
-              <span className="el-meta-dot" aria-hidden="true" />
-              <span>{benchmarks.length} benchmarks</span>
-              <span className="el-meta-dot" aria-hidden="true" />
-              <span>Runners execute locally</span>
-              {leader ? (
-                <>
-                  <span className="el-meta-dot" aria-hidden="true" />
-                  <span>
-                    Current leader: {leader.modelId} · {leader.score.toFixed(3)}
-                  </span>
-                </>
-              ) : null}
-            </div>
-          </div>
-
-          <div className="el-hero-art">
-            <div className="el-ghost-fallback" aria-hidden="true" />
           </div>
         </div>
       </section>
@@ -100,9 +79,6 @@ export default async function Home() {
           </div>
           <div className="el-latest-row">
             <h2>WeirdBench Intelligence Index</h2>
-            <span className="el-arrow" aria-hidden="true">
-              <ArrowUpRightIcon />
-            </span>
           </div>
           <p>
             A single ranking across every WeirdBench benchmark. Raw scores are
@@ -118,41 +94,52 @@ export default async function Home() {
           <h3>Benchmarks</h3>
           <Link href="/intelligence-index" className="el-list-more">
             Full index
-            <ArrowUpRightIcon />
           </Link>
         </div>
-        <ul className="el-list">
+        <div className="el-cards">
           {benchmarkPreviews.map(({ benchmark, topScores }) => {
-            const top = topScores[0];
             return (
-              <li key={benchmark.id}>
-                <Link
-                  href={`/benchmarks/${benchmark.id}`}
-                  className="el-row el-post-row"
-                >
-                  <div>
-                    <div className="el-post-meta">
-                      <span>{benchmark.id}</span>
-                      <span>{getScoreDirectionLabel(benchmark.scoreDirection)}</span>
-                      {top ? (
-                        <span>
-                          top: {top.modelId} · {top.score.toFixed(3)}
+              <Link
+                key={benchmark.id}
+                href={`/benchmarks/${benchmark.id}`}
+                className="el-card"
+              >
+                <div className="el-post-meta">
+                  <span>{benchmark.id}</span>
+                  <span>{getScoreDirectionLabel(benchmark.scoreDirection)}</span>
+                </div>
+                <h3 className="el-card-name">{benchmark.name}</h3>
+                {benchmark.description ? (
+                  <p className="el-card-desc">{benchmark.description}</p>
+                ) : null}
+                <div className="el-card-board">
+                  <p className="el-card-board-label">Leaderboard preview</p>
+                  {topScores.length > 0 ? (
+                    topScores.map((row, index) => (
+                      <div
+                        key={row.modelId}
+                        className="el-card-board-row"
+                      >
+                        <span className="el-card-board-rank">
+                          {index + 1}
                         </span>
-                      ) : (
-                        <span>no scores yet</span>
-                      )}
-                    </div>
-                    <h2>{benchmark.name}</h2>
-                    {benchmark.description ? <p>{benchmark.description}</p> : null}
-                  </div>
-                  <span className="el-arrow" aria-hidden="true">
-                    <ArrowUpRightIcon />
-                  </span>
-                </Link>
-              </li>
+                        <span className="el-card-board-name">
+                          {row.modelId}
+                        </span>
+                        <span className="el-card-board-score">
+                          {row.score.toFixed(3)}
+                        </span>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="el-card-empty">No scores yet.</div>
+                  )}
+                </div>
+                <span className="el-card-foot">View benchmark</span>
+              </Link>
             );
           })}
-        </ul>
+        </div>
       </section>
     </PageShell>
   );
