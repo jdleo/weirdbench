@@ -50,6 +50,8 @@ type ChatMessage = {
   content: string;
 };
 
+type ChatRequestMode = "strict" | "relaxed" | "minimal";
+
 export type RegexGolfPuzzle = {
   name: string;
   match: string[];
@@ -819,7 +821,8 @@ function extractRegex(rawResponse: string): string {
 function buildChatRequest(input: {
   modelId: string;
   messages: ChatMessage[];
-  mode: "strict" | "relaxed" | "minimal";
+  mode: ChatRequestMode;
+  omitTemperature?: boolean;
 }): Record<string, unknown> {
   const requestOverride = getRequestOverride(input.modelId);
   const useReasoningExclude =
@@ -834,7 +837,7 @@ function buildChatRequest(input: {
   return {
     model: input.modelId,
     messages: input.messages,
-    temperature: 0,
+    temperature: input.omitTemperature ? undefined : 0,
     ...(requestOverride.reasoning
       ? {
           reasoning: requestOverride.reasoning,
@@ -862,9 +865,12 @@ async function requestChatCompletion(input: {
     "relaxed",
     "minimal",
   ];
+  let modeIndex = 0;
+  let omitTemperature = false;
   let lastError: Error | null = null;
 
-  for (const mode of modes) {
+  while (modeIndex < modes.length) {
+    const mode = modes[modeIndex];
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
@@ -876,6 +882,7 @@ async function requestChatCompletion(input: {
           buildChatRequest({
             ...input,
             mode,
+            omitTemperature,
           }),
         ),
         signal: controller.signal,
@@ -888,6 +895,15 @@ async function requestChatCompletion(input: {
       const errorText = await response.text();
 
       if (
+        response.status === 400 &&
+        errorText.toLowerCase().includes("temperature") &&
+        !omitTemperature
+      ) {
+        omitTemperature = true;
+        continue;
+      }
+
+      if (
         response.status === 404 &&
         errorText.includes("requested parameters") &&
         mode !== "minimal"
@@ -895,6 +911,7 @@ async function requestChatCompletion(input: {
         lastError = new Error(
           `OpenRouter chat request failed in ${mode} mode: ${response.status} ${errorText}`,
         );
+        modeIndex += 1;
         continue;
       }
 

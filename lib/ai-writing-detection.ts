@@ -17,6 +17,7 @@ type ProviderOverride = {
 
 type RequestOverride = {
   provider?: ProviderOverride;
+  reasoning?: Record<string, unknown>;
   useReasoningExclude?: boolean;
   maxTokens?: number;
 };
@@ -82,6 +83,15 @@ export type AiWritingDetectionBenchmarkResult = {
 };
 
 const providerOverrides: Record<string, RequestOverride> = {
+  "moonshotai/kimi-k2.6": {
+    provider: {
+      require_parameters: true,
+    },
+    reasoning: {
+      effort: "none",
+      exclude: true,
+    },
+  },
   "minimax/minimax-m2.5": {
     provider: {
       allow_fallbacks: false,
@@ -395,6 +405,7 @@ function buildChatRequest(input: {
   modelId: string;
   prompt: string;
   mode: ChatRequestMode;
+  omitTemperature?: boolean;
 }): Record<string, unknown> {
   const requestOverride = getRequestOverride(input.modelId);
   const useReasoningExclude =
@@ -414,10 +425,14 @@ function buildChatRequest(input: {
         content: input.prompt,
       },
     ],
-    temperature: 0,
+    temperature: input.omitTemperature ? undefined : 0,
     max_tokens:
       requestOverride.maxTokens ?? DEFAULT_MAX_CLASSIFICATION_TOKENS,
-    ...(useReasoningExclude
+    ...(requestOverride.reasoning
+      ? {
+          reasoning: requestOverride.reasoning,
+        }
+      : useReasoningExclude
       ? {
           reasoning: {
             exclude: true,
@@ -438,7 +453,11 @@ async function requestChatCompletion(input: {
   const modes: ChatRequestMode[] = ["strict", "relaxed", "minimal"];
   let lastError: Error | null = null;
 
-  for (const mode of modes) {
+  let modeIndex = 0;
+  let omitTemperature = false;
+
+  while (modeIndex < modes.length) {
+    const mode = modes[modeIndex];
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: getOpenRouterHeaders(),
@@ -447,6 +466,7 @@ async function requestChatCompletion(input: {
           modelId: input.modelId,
           prompt: input.prompt,
           mode,
+          omitTemperature,
         }),
       ),
     });
@@ -458,6 +478,15 @@ async function requestChatCompletion(input: {
     const errorText = await response.text();
 
     if (
+      response.status === 400 &&
+      errorText.toLowerCase().includes("temperature") &&
+      !omitTemperature
+    ) {
+      omitTemperature = true;
+      continue;
+    }
+
+    if (
       response.status === 404 &&
       errorText.includes("requested parameters") &&
       mode !== "minimal"
@@ -465,6 +494,7 @@ async function requestChatCompletion(input: {
       lastError = new Error(
         `OpenRouter chat request failed in ${mode} mode: ${response.status} ${errorText}`,
       );
+      modeIndex += 1;
       continue;
     }
 
