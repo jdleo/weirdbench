@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import {
   benchmarkRegistry,
@@ -6,6 +5,7 @@ import {
 } from "@/lib/benchmarks";
 import { getTopModelPreview } from "@/lib/benchmark-store";
 import { siteConfig } from "@/lib/site";
+import { ArrowUpRightIcon, PageShell } from "@/components/chrome";
 
 export const revalidate = 60;
 
@@ -17,6 +17,7 @@ export default async function Home() {
       topScores: await getTopModelPreview(benchmark, 3),
     })),
   );
+  const leader = benchmarkPreviews[0]?.topScores[0];
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "WebSite",
@@ -37,147 +38,122 @@ export default async function Home() {
   };
 
   return (
-    <div className="home-page-shell">
+    <PageShell activeId="home">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <main className="mx-auto flex min-h-screen w-full max-w-[96rem] flex-col px-4 py-4 sm:px-6 sm:py-6">
-        <header className="shell-panel mb-4 rounded-[2rem] px-5 py-4 xl:px-6">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex min-w-0 items-center gap-4">
-              <Image
-                src="/weirdbench-mark.png"
-                alt="WeirdBench"
-                width={44}
-                height={44}
-                className="h-11 w-11 shrink-0 object-contain opacity-95"
-                priority
-              />
-              <div className="min-w-0">
-                <p className="shell-label">WeirdBench</p>
-                <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-                  Unconventional LLM benchmarks.
-                </p>
-              </div>
-            </div>
 
-            <div className="flex flex-nowrap items-center gap-2 overflow-x-auto sm:gap-3">
-              <Link
-                href="https://github.com/jdleo/weirdbench"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="shell-button-secondary inline-flex shrink-0 items-center justify-center whitespace-nowrap px-4 py-2.5 text-xs sm:px-5 sm:text-sm"
-              >
-                GitHub
-              </Link>
-              <Link
-                href="/intelligence-index"
-                className="inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-full border px-4 py-2.5 text-xs font-medium transition-colors sm:px-5 sm:text-sm"
-                style={{
-                  backgroundColor: "#ffffff",
-                  color: "#000000",
-                  borderColor: "#ffffff",
-                }}
-              >
-                <span className="sm:hidden">Intelligence Index</span>
-                <span className="hidden sm:inline">
-                  WeirdBench Intelligence Index
-                </span>
-              </Link>
-            </div>
-          </div>
-        </header>
-
-        <section className="shell-panel hero-panel rounded-[2rem] px-6 py-8 sm:px-8 sm:py-10 xl:px-10 xl:py-12">
-          <div className="max-w-4xl">
-            <h1 className="shell-display">
-              WeirdBench tests modern LLMs on the weird corners other evals skip.
+      <section className="el-hero">
+        <div className="el-hero-inner">
+          <div className="el-hero-copy">
+            <h1>
+              WeirdBench
+              <span className="el-hero-cursor" aria-hidden="true" />
             </h1>
-            <p className="shell-copy mt-5 max-w-2xl text-base sm:text-lg">
-              Unconventional tasks, clear score direction, and a dead-simple score
-              table. The benchmark definitions and code are written locally and
-              published openly.
+            <p className="el-hero-sub">
+              Unconventional LLM benchmarks for the weird corners other evals
+              skip. Definitions and runners live locally, scores are published
+              openly.
             </p>
 
-            <div className="mt-8 flex flex-wrap gap-3">
-              <a
-                href="#benchmarks"
-                className="shell-button-secondary inline-flex items-center justify-center px-6 py-3 text-sm font-medium"
-              >
-                View Benchmarks
+            <div className="el-hero-actions">
+              <a href="#benchmarks" className="el-btn el-btn-dark">
+                Browse benchmarks
+                <ArrowUpRightIcon />
               </a>
-              <Link
-                href="https://github.com/jdleo/weirdbench"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="shell-button-secondary inline-flex items-center justify-center px-6 py-3 text-sm font-medium"
-              >
-                View on GitHub
+              <Link href="/intelligence-index" className="el-btn el-btn-light">
+                Read the index
               </Link>
             </div>
-          </div>
-        </section>
 
-        <section
-          id="benchmarks"
-          className="shell-panel home-benchmarks-panel mt-4 rounded-[2rem] p-4 sm:p-5"
-        >
-          <div className="grid gap-4">
-            <section className="px-1 py-1">
-              <h2 className="shell-title">Recent benchmarks:</h2>
-            </section>
-
-            <div className="benchmark-preview-grid gap-4">
-              {benchmarkPreviews.map(({ benchmark, topScores }) => (
-                <article
-                  key={benchmark.id}
-                  className="shell-card rounded-[1.5rem] p-5"
-                >
-                  <p className="shell-label">{benchmark.id}</p>
-                  <h3 className="mt-3 text-xl font-medium text-[var(--color-text)]">
-                    {benchmark.name}
-                  </h3>
-                  {benchmark.description ? (
-                    <p className="shell-copy mt-3 text-sm">
-                      {benchmark.description}
-                    </p>
-                  ) : null}
-                  <div className="mt-4">
-                    <p className="shell-label">Top Models</p>
-                    <div className="mt-2 space-y-2">
-                      {topScores.length > 0 ? (
-                        topScores.map((row) => (
-                          <div key={row.modelId} className="result-row">
-                            <span>{row.modelId}</span>
-                            <span>{row.score.toFixed(3)}</span>
-                          </div>
-                        ))
-                      ) : (
-                        <div className="result-row">
-                          <span>No scores yet</span>
-                          <span>run local script</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    <span className="shell-pill px-3 py-1 text-xs">
-                      {getScoreDirectionLabel(benchmark.scoreDirection)}
-                    </span>
-                  </div>
-                  <Link
-                    href={`/benchmarks/${benchmark.id}`}
-                    className="shell-button-secondary mt-5 inline-flex w-full items-center justify-center px-4 py-2.5 text-sm font-medium"
-                  >
-                    View Benchmark
-                  </Link>
-                </article>
-              ))}
+            <div className="el-hero-meta">
+              <span>Open source</span>
+              <span className="el-meta-dot" aria-hidden="true" />
+              <span>{benchmarks.length} benchmarks</span>
+              <span className="el-meta-dot" aria-hidden="true" />
+              <span>Runners execute locally</span>
+              {leader ? (
+                <>
+                  <span className="el-meta-dot" aria-hidden="true" />
+                  <span>
+                    Current leader: {leader.modelId} · {leader.score.toFixed(3)}
+                  </span>
+                </>
+              ) : null}
             </div>
           </div>
-        </section>
-      </main>
-    </div>
+
+          <div className="el-hero-art">
+            <div className="el-ghost-fallback" aria-hidden="true" />
+          </div>
+        </div>
+      </section>
+
+      <section className="el-section" aria-label="Intelligence Index">
+        <Link href="/intelligence-index" className="el-latest">
+          <div className="el-eyebrow">
+            <span>Consolidated ranking</span>
+            <span>
+              {benchmarks.length} benchmark{benchmarks.length === 1 ? "" : "s"}
+            </span>
+          </div>
+          <div className="el-latest-row">
+            <h2>WeirdBench Intelligence Index</h2>
+            <span className="el-arrow" aria-hidden="true">
+              <ArrowUpRightIcon />
+            </span>
+          </div>
+          <p>
+            A single ranking across every WeirdBench benchmark. Raw scores are
+            normalized relative to each benchmark leader, then adjusted for
+            coverage — so higher-is-better and lower-is-better benchmarks share
+            one honest table.
+          </p>
+        </Link>
+      </section>
+
+      <section id="benchmarks" className="el-section" aria-label="Benchmarks">
+        <div className="el-list-head">
+          <h3>Benchmarks</h3>
+          <Link href="/intelligence-index" className="el-list-more">
+            Full index
+            <ArrowUpRightIcon />
+          </Link>
+        </div>
+        <ul className="el-list">
+          {benchmarkPreviews.map(({ benchmark, topScores }) => {
+            const top = topScores[0];
+            return (
+              <li key={benchmark.id}>
+                <Link
+                  href={`/benchmarks/${benchmark.id}`}
+                  className="el-row el-post-row"
+                >
+                  <div>
+                    <div className="el-post-meta">
+                      <span>{benchmark.id}</span>
+                      <span>{getScoreDirectionLabel(benchmark.scoreDirection)}</span>
+                      {top ? (
+                        <span>
+                          top: {top.modelId} · {top.score.toFixed(3)}
+                        </span>
+                      ) : (
+                        <span>no scores yet</span>
+                      )}
+                    </div>
+                    <h2>{benchmark.name}</h2>
+                    {benchmark.description ? <p>{benchmark.description}</p> : null}
+                  </div>
+                  <span className="el-arrow" aria-hidden="true">
+                    <ArrowUpRightIcon />
+                  </span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </section>
+    </PageShell>
   );
 }
